@@ -3,7 +3,7 @@
 Plugin Name: Multi Device Switcher
 Plugin URI: https://github.com/thingsym/multi-device-switcher
 Description: This WordPress plugin allows you to set a separate theme for device (Smart Phone, Tablet PC, Mobile Phone, Game).
-Version: 1.0.0
+Version: 1.0.1
 Author: Yousuke Mizuno
 Author URI: http://www.thingslabo.com/
 License: GPL2
@@ -137,6 +137,21 @@ class Multi_Device_Switcher {
 $multi_device_switcher = new Multi_Device_Switcher;
 
 /**
+ * Properly enqueue styles and scripts for our multi_device_switcher options page.
+ *
+ * This function is attached to the admin_enqueue_scripts action hook.
+ *
+ * @since 1.0
+ *
+ */
+function multi_device_switcher_admin_enqueue_scripts( $hook_suffix ) {
+	wp_enqueue_style( 'multi-device-switcher-options', WP_PLUGIN_URL . '/multi-device-switcher/multi-device-switcher.css', false, '2011-08-22' );
+	wp_enqueue_style( 'thickbox', includes_url() . '/js/thickbox/thickbox.css', false, '20090514' );
+	wp_enqueue_script('jquery-ui-tabs');
+	wp_enqueue_script( 'multi-device-switcher-options', WP_PLUGIN_URL . '/multi-device-switcher/multi-device-switcher.js', array( 'jquery' ), '2011-08-22' );
+}
+
+/**
  * Register the form setting for our multi_device_switcher array.
  *
  * This function is attached to the admin_init action hook.
@@ -151,13 +166,6 @@ function multi_device_switcher_init() {
 	// If we have no options in the database, let's add them now.
 	if ( false === multi_device_switcher_get_options() )
 		add_option( 'multi_device_switcher_options' );
-
-	load_plugin_textdomain('multi-device-switcher', false, 'multi-device-switcher/languages');
-
-	wp_enqueue_style( 'multi-device-switcher-options', WP_PLUGIN_URL . '/multi-device-switcher/multi-device-switcher.css', false, '2011-08-22' );
-	wp_enqueue_style( 'thickbox', includes_url() . '/js/thickbox/thickbox.css', false, '20090514' );
-	wp_enqueue_script('jquery-ui-tabs');
-	wp_enqueue_script( 'multi-device-switcher-options', WP_PLUGIN_URL . '/multi-device-switcher/multi-device-switcher.js', array( 'jquery' ), '2011-08-22' );
 
 	register_setting(
 		'multi_device_switcher',       // Options group, see settings_fields() call in multi_device_switcher_render_page()
@@ -211,6 +219,8 @@ function multi_device_switcher_add_page() {
 
 	if ($help) 
 		add_contextual_help( $theme_page, $help );
+
+	add_action( "admin_print_styles-$theme_page", 'multi_device_switcher_admin_enqueue_scripts' );
 }
 add_action( 'admin_menu', 'multi_device_switcher_add_page' );
 
