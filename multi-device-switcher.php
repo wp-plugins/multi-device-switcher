@@ -3,7 +3,7 @@
 Plugin Name: Multi Device Switcher
 Plugin URI: https://github.com/thingsym/multi-device-switcher
 Description: This WordPress plugin allows you to set a separate theme for device (Smart Phone, Tablet PC, Mobile Phone, Game and custom).
-Version: 1.1.0
+Version: 1.1.1
 Author: thingsym
 Author URI: http://www.thingslabo.com/
 License: GPL2
@@ -34,26 +34,27 @@ class Multi_Device_Switcher {
 		$userAgent = $this->get_options_userAgent();
 		$this->device = '';
 
-		if ( $userAgent['smart'] && preg_match( '/' . implode( '|', $userAgent['smart'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
-			$this->device = 'smart';
+		foreach ( array_reverse($userAgent) as $key => $val ) {
+			if ( ! preg_match( "/^custom_switcher_/", $key ) ) 
+				continue;
+			if ($userAgent[$key] && preg_match( '/' . implode( '|', $userAgent[$key] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
+				$this->device = $key;
+				break;
+			}
 		}
-		elseif ( $userAgent['tablet'] && preg_match( '/' . implode( '|', $userAgent['tablet'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
-			$this->device = 'tablet';
-		}
-		elseif ( $userAgent['mobile'] && preg_match( '/' . implode( '|', $userAgent['mobile'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
-			$this->device = 'mobile';
-		}
-		elseif ( $userAgent['game'] && preg_match( '/' . implode( '|', $userAgent['game'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
-			$this->device = 'game';
-		}
-		else {
-			foreach ( $userAgent as $key => $val ) {
-				if ( ! preg_match( "/^custom_switcher_/", $key ) ) 
-					continue;
-				if ($userAgent[$key] && preg_match( '/' . implode( '|', $userAgent[$key] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
-					$this->device = $key;
-					break;
-				}
+
+		if (! $this->device) {
+			if ( $userAgent['game'] && preg_match( '/' . implode( '|', $userAgent['game'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
+				$this->device = 'game';
+			}
+			elseif ( $userAgent['tablet'] && preg_match( '/' . implode( '|', $userAgent['tablet'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
+				$this->device = 'tablet';
+			}
+			elseif ( $userAgent['smart'] && preg_match( '/' . implode( '|', $userAgent['smart'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
+				$this->device = 'smart';
+			}
+			elseif ( $userAgent['mobile'] && preg_match( '/' . implode( '|', $userAgent['mobile'] ) . '/i', $_SERVER['HTTP_USER_AGENT']) ) {
+				$this->device = 'mobile';
 			}
 		}
 
@@ -180,6 +181,20 @@ if ( ! is_admin() )
 	$multi_device_switcher = new Multi_Device_Switcher();
 
 /**
+ * Add HTTP/1.1 Vary header.
+ *
+ * @since 1.1.1
+ *
+ */
+function multi_device_switcher_add_header_vary( $headers ) {
+	if ( ! is_admin() ) {
+		$headers['Vary'] = 'User-Agent';
+		return $headers;
+	}
+}
+add_filter( 'wp_headers', 'multi_device_switcher_add_header_vary' );
+
+/**
  * Properly enqueue scripts for our multi_device_switcher options page.
  *
  * This function is attached to the admin_enqueue_scripts action hook.
@@ -290,10 +305,10 @@ function multi_device_switcher_get_default_options() {
 		'theme_tablet' => 'None',
 		'theme_mobile' => 'None',
 		'theme_game' => 'None',
-		'userAgent_smart' => 'iPhone, iPod, Android, dream, CUPCAKE, Windows Phone, webOS, BlackBerry8707, BlackBerry9000, BlackBerry9300, BlackBerry9500, BlackBerry9530, BlackBerry9520, BlackBerry9550, BlackBerry9700, BlackBerry9800',
-		'userAgent_tablet' => 'iPad',
+		'userAgent_smart' => 'iPhone, iPod, Android, dream, CUPCAKE, Windows Phone, webOS, BB10, BlackBerry8707, BlackBerry9000, BlackBerry9300, BlackBerry9500, BlackBerry9530, BlackBerry9520, BlackBerry9550, BlackBerry9700, BlackBerry 93, BlackBerry 97, BlackBerry 99, BlackBerry 98',
+		'userAgent_tablet' => 'iPad, Kindle, Sony Tablet, Nexus 7',
 		'userAgent_mobile' => 'DoCoMo, SoftBank, J-PHONE, Vodafone, KDDI, UP.Browser, WILLCOM, emobile, DDIPOCKET, Windows CE, BlackBerry, Symbian, PalmOS, Huawei, IAC, Nokia',
-		'userAgent_game' => 'PlayStation Portable, PlayStation Vita, PSP, PS2, PLAYSTATION 3, Nitro, Nintendo 3DS, Nintendo Wii',
+		'userAgent_game' => 'PlayStation Portable, PlayStation Vita, PSP, PS2, PLAYSTATION 3, Nitro, Nintendo 3DS, Nintendo Wii, Xbox',
 	);
 
 	return $default_theme_options;
